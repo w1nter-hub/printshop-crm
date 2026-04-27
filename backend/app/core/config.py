@@ -33,6 +33,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost",
         "http://127.0.0.1",
+        "https://printshop-crm.web.app",
+        "https://printshop-crm.firebaseapp.com",
         "capacitor://localhost",
         "ionic://localhost",
         "http://localhost:8100",
