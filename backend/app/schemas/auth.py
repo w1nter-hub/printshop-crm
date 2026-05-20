@@ -7,6 +7,8 @@ This module defines Pydantic schemas for authentication requests and responses.
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
+from app.models.user import UserRole
+
 
 class Token(BaseModel):
     """
@@ -18,6 +20,21 @@ class Token(BaseModel):
     """
     access_token: str
     token_type: str = "bearer"
+
+
+class AuthUser(BaseModel):
+    id: int
+    email: EmailStr
+    full_name: Optional[str] = None
+    role: UserRole
+    client_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LoginResponse(Token):
+    user: AuthUser
 
 
 class TokenData(BaseModel):

@@ -40,6 +40,7 @@ class Client(Base):
 
     # Relationships
     orders = relationship("Order", back_populates="client")
+    portal_user = relationship("User", back_populates="client", uselist=False)
 
     def __repr__(self) -> str:
         """String representation of Client."""

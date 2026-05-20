@@ -52,6 +52,23 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
+def _ensure_schema_updates() -> None:
+    """Apply lightweight schema updates for existing PostgreSQL databases."""
+    if not settings.sqlalchemy_database_url.startswith("postgresql"):
+        return
+
+    from sqlalchemy import text
+
+    with engine.connect() as connection:
+        connection.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN IF NOT EXISTS client_id INTEGER "
+                "REFERENCES clients(id)"
+            )
+        )
+        connection.commit()
+
+
 def init_db() -> None:
     """
     Initialize database by creating all tables.
@@ -63,3 +80,4 @@ def init_db() -> None:
         In production, use Alembic migrations instead of this function.
     """
     Base.metadata.create_all(bind=engine)
+    _ensure_schema_updates()

@@ -6,7 +6,7 @@ This module defines Pydantic schemas for Client model validation and serializati
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class ClientBase(BaseModel):
@@ -33,9 +33,19 @@ class ClientCreate(ClientBase):
     """
     Schema for creating a new client.
     
-    Inherits all fields from ClientBase.
+    Optional portal account lets the client log in and view their orders.
     """
-    pass
+    create_portal_account: bool = False
+    portal_password: Optional[str] = Field(None, min_length=6)
+
+    @model_validator(mode="after")
+    def validate_portal_fields(self):
+        if self.create_portal_account:
+            if not self.email:
+                raise ValueError("Email обязателен для доступа в личный кабинет")
+            if not self.portal_password:
+                raise ValueError("Укажите пароль для личного кабинета")
+        return self
 
 
 class ClientUpdate(BaseModel):
@@ -72,4 +82,4 @@ class Client(ClientInDB):
     
     Inherits from ClientInDB and used for API responses.
     """
-    pass
+    has_portal_account: bool = False

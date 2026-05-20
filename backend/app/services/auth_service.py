@@ -10,7 +10,13 @@ def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
 
-def create_user(db: Session, user: UserCreate) -> User:
+def create_user(
+    db: Session,
+    user: UserCreate,
+    *,
+    client_id: int | None = None,
+    role: UserRole | None = None,
+) -> User:
     """Создает нового пользователя с хешированным паролем"""
     hashed_password = get_password_hash(user.password)
     
@@ -18,7 +24,8 @@ def create_user(db: Session, user: UserCreate) -> User:
         email=user.email,
         password_hash=hashed_password,
         full_name=user.full_name,
-        role=user.role if hasattr(user, 'role') else UserRole.CLIENT
+        role=role if role is not None else (user.role if hasattr(user, "role") else UserRole.CLIENT),
+        client_id=client_id,
     )
     
     db.add(db_user)

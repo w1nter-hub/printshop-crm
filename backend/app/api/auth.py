@@ -8,13 +8,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.auth import Token, LoginRequest, RegisterRequest
+from app.schemas.auth import Token, LoginRequest, RegisterRequest, LoginResponse, AuthUser
 from app.schemas.user import User as UserSchema, UserCreate
+from app.api.deps import get_current_active_user
+from app.models.user import User, UserRole
 from app.services.auth_service import (
     authenticate_user,
     create_user,
     get_user_by_email,
-    create_user_token
+    create_user_token,
 )
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -48,14 +50,20 @@ async def register(
     user_data = UserCreate(
         email=request.email,
         password=request.password,
-        full_name=request.full_name
+        full_name=request.full_name,
+        role=UserRole.MANAGER,
     )
     
-    new_user = create_user(db, user_data)
+    new_user = create_user(db, user_data, role=UserRole.MANAGER)
     return new_user
 
 
-@router.post("/login", response_model=Token)
+@router.get("/me", response_model=AuthUser)
+async def get_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
+
+
+@router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest,
     db: Session = Depends(get_db)
@@ -82,4 +90,7 @@ async def login(
         )
     
     token_data = create_user_token(user)
-    return token_data
+    return {
+        **token_data,
+        "user": AuthUser.model_validate(user),
+    }

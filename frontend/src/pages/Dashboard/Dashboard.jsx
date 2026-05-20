@@ -24,6 +24,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (!authService.isAuthenticated()) {
       navigate('/login');
+      return;
+    }
+    if (authService.isClient()) {
+      navigate('/portal');
     }
 
     const handleResize = () => {

@@ -30,7 +30,10 @@ const Register = () => {
 
   return (
     <div className="login-container">
-      <Card className="login-card" title="Регистрация в PrintShop CRM">
+      <Card className="login-card" title="Регистрация сотрудника PrintShop CRM">
+        <p style={{ color: '#666', marginBottom: 16 }}>
+          Регистрация только для сотрудников (менеджер/админ). Клиентам доступ выдаётся при создании карточки клиента.
+        </p>
         <Form
           name="register"
           onFinish={onFinish}

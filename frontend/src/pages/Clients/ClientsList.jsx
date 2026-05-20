@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Space, Popconfirm, message, Input } from 'antd';
+import { Table, Button, Space, Popconfirm, message, Input, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import clientService from '../../services/clientService';
 import ClientForm from './ClientForm';
@@ -131,6 +131,14 @@ const ClientsList = () => {
       title: 'Компания',
       dataIndex: 'company',
       key: 'company',
+    },
+    {
+      title: 'Кабинет',
+      dataIndex: 'has_portal_account',
+      key: 'has_portal_account',
+      width: 110,
+      render: (value) =>
+        value ? <Tag color="green">Есть</Tag> : <Tag>Нет</Tag>,
     },
     {
       title: 'Действия',

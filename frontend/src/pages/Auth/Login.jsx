@@ -12,9 +12,11 @@ const Login = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      await authService.login(values.email, values.password);
+      const data = await authService.login(values.email, values.password);
       message.success('Вход выполнен успешно!');
-      navigate('/dashboard');
+      const home =
+        data.user?.role === 'client' ? '/portal' : '/dashboard';
+      navigate(home);
     } catch (error) {
       message.error('Ошибка входа: ' + (error.response?.data?.detail || 'Неверный email или пароль'));
     } finally {
@@ -62,8 +64,10 @@ const Login = () => {
             </Button>
           </Form.Item>
 
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
+          <div style={{ textAlign: 'center', marginTop: 16, color: '#666', fontSize: 13 }}>
+            Клиентам доступ выдаёт менеджер при создании карточки клиента.
+            <br />
+            Сотрудникам: <Link to="/register">регистрация</Link>
           </div>
         </Form>
       </Card>

@@ -8,11 +8,29 @@ import Home from './pages/Dashboard/Home';
 import ClientsList from './pages/Clients/ClientsList';
 import ProductsList from './pages/Products/ProductsList';
 import OrdersList from './pages/Orders/OrdersList';
+import ClientPortal from './pages/Portal/ClientPortal';
+import MyOrders from './pages/Portal/MyOrders';
+import ClientOrderDetails from './pages/Portal/ClientOrderDetails';
 import authService from './services/authService';
 
-// Компонент для защищенных маршрутов
-const ProtectedRoute = ({ children }) => {
-  return authService.isAuthenticated() ? children : <Navigate to="/login" />;
+const ProtectedRoute = ({ children, staffOnly = false, clientOnly = false }) => {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" />;
+  }
+  if (staffOnly && authService.isClient()) {
+    return <Navigate to="/portal" />;
+  }
+  if (clientOnly && !authService.isClient()) {
+    return <Navigate to="/dashboard" />;
+  }
+  return children;
+};
+
+const RootRedirect = () => {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" />;
+  }
+  return <Navigate to={authService.getHomePath()} />;
 };
 
 function App() {
@@ -25,7 +43,7 @@ function App() {
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute staffOnly>
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -35,12 +53,23 @@ function App() {
             <Route path="products" element={<ProductsList />} />
             <Route path="orders" element={<OrdersList />} />
           </Route>
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route
+            path="/portal"
+            element={
+              <ProtectedRoute clientOnly>
+                <ClientPortal />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<MyOrders />} />
+            <Route path="orders/:orderId" element={<ClientOrderDetails />} />
+          </Route>
+          <Route path="/" element={<RootRedirect />} />
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>
   );
 }
 
-export default App
+export default App;

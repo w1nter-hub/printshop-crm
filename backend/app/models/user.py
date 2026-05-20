@@ -6,7 +6,7 @@ This module defines the User model with role-based access control.
 
 from enum import Enum as PyEnum
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -40,9 +40,12 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
     role = Column(Enum(UserRole), default=UserRole.CLIENT, nullable=False)
+    client_id = Column(Integer, ForeignKey("clients.id"), nullable=True, index=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    client = relationship("Client", back_populates="portal_user", uselist=False)
 
     def __repr__(self) -> str:
         """String representation of User."""
