@@ -13,7 +13,7 @@ from app.schemas.client import Client, ClientCreate, ClientUpdate
 from app.models.client import Client as ClientModel
 from app.services.client_service import (
     create_client_with_optional_portal,
-    client_has_portal_account,
+    serialize_client,
 )
 
 router = APIRouter(prefix="/clients", tags=["clients"])
@@ -37,13 +37,7 @@ async def get_clients(
         List of Client objects
     """
     clients = db.query(ClientModel).offset(skip).limit(limit).all()
-    return [
-        Client(
-            **Client.model_validate(c).model_dump(),
-            has_portal_account=client_has_portal_account(db, c.id),
-        )
-        for c in clients
-    ]
+    return [Client(**serialize_client(db, c)) for c in clients]
 
 
 @router.get("/{client_id}", response_model=Client)
@@ -70,10 +64,7 @@ async def get_client(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Client not found"
         )
-    return Client(
-        **Client.model_validate(client).model_dump(),
-        has_portal_account=client_has_portal_account(db, client.id),
-    )
+    return Client(**serialize_client(db, client))
 
 
 @router.post("/", response_model=Client, status_code=status.HTTP_201_CREATED)
@@ -98,10 +89,12 @@ async def create_client(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
-    return Client(
-        **Client.model_validate(db_client).model_dump(),
-        has_portal_account=client_has_portal_account(db, db_client.id),
-    )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка создания клиента: {exc}",
+        ) from exc
+    return Client(**serialize_client(db, db_client))
 
 
 @router.put("/{client_id}", response_model=Client)
@@ -136,10 +129,7 @@ async def update_client(
     
     db.commit()
     db.refresh(db_client)
-    return Client(
-        **Client.model_validate(db_client).model_dump(),
-        has_portal_account=client_has_portal_account(db, db_client.id),
-    )
+    return Client(**serialize_client(db, db_client))
 
 
 @router.delete("/{client_id}")

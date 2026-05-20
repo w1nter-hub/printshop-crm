@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import authService from '../../services/authService';
+import { formatApiError } from '../../utils/formatApiError';
 import './Login.css';
 
 const Login = () => {
@@ -18,7 +19,7 @@ const Login = () => {
         data.user?.role === 'client' ? '/portal' : '/dashboard';
       navigate(home);
     } catch (error) {
-      message.error('Ошибка входа: ' + (error.response?.data?.detail || 'Неверный email или пароль'));
+      message.error('Ошибка входа: ' + formatApiError(error, 'Неверный email или пароль'));
     } finally {
       setLoading(false);
     }

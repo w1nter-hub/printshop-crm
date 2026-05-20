@@ -1,4 +1,4 @@
-﻿from typing import Optional
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash, verify_password, create_access_token
