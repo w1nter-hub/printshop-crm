@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import auth, clients, products, orders, portal
+from app.api import auth, clients, products, orders, portal, analytics
 
 
 # Create FastAPI application instance
@@ -40,6 +40,7 @@ app.include_router(clients.router)
 app.include_router(products.router)
 app.include_router(orders.router)
 app.include_router(portal.router)
+app.include_router(analytics.router)
 
 
 @app.on_event("startup")
