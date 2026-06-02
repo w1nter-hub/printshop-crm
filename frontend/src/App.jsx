@@ -11,6 +11,7 @@ import OrdersList from './pages/Orders/OrdersList';
 import ClientPortal from './pages/Portal/ClientPortal';
 import MyOrders from './pages/Portal/MyOrders';
 import ClientOrderDetails from './pages/Portal/ClientOrderDetails';
+import Analytics from './pages/Analytics/Analytics';
 import authService from './services/authService';
 
 const ProtectedRoute = ({ children, staffOnly = false, clientOnly = false }) => {
@@ -52,6 +53,7 @@ function App() {
             <Route path="clients" element={<ClientsList />} />
             <Route path="products" element={<ProductsList />} />
             <Route path="orders" element={<OrdersList />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
           <Route
             path="/portal"

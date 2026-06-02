@@ -7,6 +7,7 @@ import {
   LogoutOutlined,
   DashboardOutlined,
   MenuOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import authService from '../../services/authService';
@@ -63,6 +64,11 @@ const Dashboard = () => {
       key: '/dashboard/orders',
       icon: <FileTextOutlined />,
       label: 'Заказы',
+    },
+    {
+      key: '/dashboard/analytics',
+      icon: <BarChartOutlined />,
+      label: 'Аналитика',
     },
   ];
 

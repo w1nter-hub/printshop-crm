@@ -4,6 +4,7 @@ import { Card, Descriptions, Table, Tag, Button, message, Divider } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import portalService from '../../services/portalService';
 import { getStatusColor, getStatusText } from '../../utils/orderStatus';
+import './ClientPortal.css';
 
 const ClientOrderDetails = () => {
   const { orderId } = useParams();
@@ -62,7 +63,7 @@ const ClientOrderDetails = () => {
   ];
 
   return (
-    <div>
+    <div className="portal-page">
       <Button
         icon={<ArrowLeftOutlined />}
         onClick={() => navigate('/portal')}
@@ -97,13 +98,16 @@ const ClientOrderDetails = () => {
         </Descriptions>
 
         <Divider>Позиции заказа</Divider>
-        <Table
-          columns={itemColumns}
-          dataSource={order.items || []}
-          rowKey="id"
-          pagination={false}
-          size="small"
-        />
+        <div className="portal-table-wrap">
+          <Table
+            columns={itemColumns}
+            dataSource={order.items || []}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            scroll={{ x: 'max-content' }}
+          />
+        </div>
       </Card>
     </div>
   );
