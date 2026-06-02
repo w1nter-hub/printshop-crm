@@ -23,7 +23,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { api } from '../../services/api';
+import api from '../../services/api';
 import { ORDER_STATUS_LABELS } from '../../utils/orderStatus';
 import './Analytics.css';
 
@@ -44,7 +44,7 @@ const GRADIENT_COLORS = [
 ];
 
 const formatMoney = (val) =>
-  new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(val);
+  new Intl.NumberFormat('ru-KZ', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 }).format(val);
 
 const CustomAreaTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -111,26 +111,20 @@ const Analytics = () => {
 
   const fetchAll = async () => {
     setLoading(true);
-    try {
-      const [dash, status, monthly, clients, trend] = await Promise.all([
-        api.get('/analytics/dashboard'),
-        api.get('/analytics/orders-by-status'),
-        api.get(`/analytics/monthly-stats?months=${monthRange}`),
-        api.get('/analytics/top-clients?limit=10'),
-        api.get(`/analytics/revenue-trend?days=${trendDays}`),
-      ]);
-      setDashboard(dash.data);
-      setStatusData(
-        status.data.map((d) => ({ ...d, name: ORDER_STATUS_LABELS[d.status] || d.status }))
-      );
-      setMonthlyData(monthly.data);
-      setTopClients(clients.data);
-      setTrendData(trend.data);
-    } catch (err) {
-      console.error('Ошибка загрузки аналитики:', err);
-    } finally {
-      setLoading(false);
-    }
+    const [dash, status, monthly, clients, trend] = await Promise.allSettled([
+      api.get('/analytics/dashboard'),
+      api.get('/analytics/orders-by-status'),
+      api.get(`/analytics/monthly-stats?months=${monthRange}`),
+      api.get('/analytics/top-clients?limit=10'),
+      api.get(`/analytics/revenue-trend?days=${trendDays}`),
+    ]);
+    if (dash.status === 'fulfilled') setDashboard(dash.value.data);
+    if (status.status === 'fulfilled')
+      setStatusData(status.value.data.map((d) => ({ ...d, name: ORDER_STATUS_LABELS[d.status] || d.status })));
+    if (monthly.status === 'fulfilled') setMonthlyData(monthly.value.data);
+    if (clients.status === 'fulfilled') setTopClients(clients.value.data);
+    if (trend.status === 'fulfilled') setTrendData(trend.value.data);
+    setLoading(false);
   };
 
   const fetchMonthly = async () => {
