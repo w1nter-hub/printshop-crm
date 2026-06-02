@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, case
 from datetime import datetime, timedelta
 from typing import Optional
 from app.core.database import get_db
@@ -117,21 +117,23 @@ async def get_monthly_stats(
 ):
     """Revenue and order counts grouped by month for the last N months."""
     start_date = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    # go back `months` months from the start of the current month
     for _ in range(months - 1):
         start_date = (start_date - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
+    year_expr = extract("year", Order.created_at)
+    month_expr = extract("month", Order.created_at)
+
     results = db.query(
-        extract("year", Order.created_at).label("year"),
-        extract("month", Order.created_at).label("month"),
+        year_expr.label("year"),
+        month_expr.label("month"),
         func.count(Order.id).label("order_count"),
         func.sum(Order.total_price).label("revenue"),
         func.sum(
-            func.case((Order.status == OrderStatus.COMPLETED, Order.total_price), else_=0)
+            case((Order.status == OrderStatus.COMPLETED, Order.total_price), else_=0)
         ).label("completed_revenue"),
     ).filter(
         Order.created_at >= start_date
-    ).group_by("year", "month").order_by("year", "month").all()
+    ).group_by(year_expr, month_expr).order_by(year_expr, month_expr).all()
 
     MONTH_NAMES = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн",
                    "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]

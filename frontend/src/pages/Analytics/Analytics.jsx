@@ -7,6 +7,7 @@ import {
   ClockCircleOutlined,
   RiseOutlined,
   CheckCircleOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import {
   AreaChart,
@@ -27,9 +28,15 @@ import api from '../../services/api';
 import { ORDER_STATUS_LABELS } from '../../utils/orderStatus';
 import './Analytics.css';
 
-
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const PERIOD_OPTIONS = [
+  { label: '1 месяц',   months: 1  },
+  { label: '3 месяца',  months: 3  },
+  { label: '6 месяцев', months: 6  },
+  { label: '12 месяцев',months: 12 },
+];
 
 const STATUS_COLORS = {
   new: '#667eea',
@@ -39,9 +46,7 @@ const STATUS_COLORS = {
   cancelled: '#fc8181',
 };
 
-const GRADIENT_COLORS = [
-  '#667eea', '#764ba2', '#f6ad55', '#48bb78', '#fc8181',
-];
+const GRADIENT_COLORS = ['#667eea', '#764ba2', '#f6ad55', '#48bb78', '#fc8181'];
 
 const formatMoney = (val) =>
   new Intl.NumberFormat('ru-KZ', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 }).format(val);
@@ -74,7 +79,7 @@ const CustomBarTooltip = ({ active, payload, label }) => {
   );
 };
 
-const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
   if (percent < 0.05) return null;
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
@@ -88,62 +93,45 @@ const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, n
 };
 
 const Analytics = () => {
+  const [period, setPeriod] = useState(3);
   const [dashboard, setDashboard] = useState(null);
   const [statusData, setStatusData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [topClients, setTopClients] = useState([]);
   const [trendData, setTrendData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [monthRange, setMonthRange] = useState(12);
-  const [trendDays, setTrendDays] = useState(30);
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    fetchAll(period);
+  }, [period]);
 
-  useEffect(() => {
-    fetchMonthly();
-  }, [monthRange]);
-
-  useEffect(() => {
-    fetchTrend();
-  }, [trendDays]);
-
-  const fetchAll = async () => {
+  const fetchAll = async (months) => {
     setLoading(true);
+    const days = months * 30;
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - months);
+    const startIso = startDate.toISOString();
+
     const [dash, status, monthly, clients, trend] = await Promise.allSettled([
-      api.get('/analytics/dashboard'),
+      api.get(`/analytics/dashboard?start_date=${startIso}`),
       api.get('/analytics/orders-by-status'),
-      api.get(`/analytics/monthly-stats?months=${monthRange}`),
+      api.get(`/analytics/monthly-stats?months=${months}`),
       api.get('/analytics/top-clients?limit=10'),
-      api.get(`/analytics/revenue-trend?days=${trendDays}`),
+      api.get(`/analytics/revenue-trend?days=${days}`),
     ]);
+
     if (dash.status === 'fulfilled') setDashboard(dash.value.data);
     if (status.status === 'fulfilled')
-      setStatusData(status.value.data.map((d) => ({ ...d, name: ORDER_STATUS_LABELS[d.status] || d.status })));
+      setStatusData(
+        status.value.data.map((d) => ({ ...d, name: ORDER_STATUS_LABELS[d.status] || d.status }))
+      );
     if (monthly.status === 'fulfilled') setMonthlyData(monthly.value.data);
     if (clients.status === 'fulfilled') setTopClients(clients.value.data);
     if (trend.status === 'fulfilled') setTrendData(trend.value.data);
     setLoading(false);
   };
 
-  const fetchMonthly = async () => {
-    try {
-      const res = await api.get(`/analytics/monthly-stats?months=${monthRange}`);
-      setMonthlyData(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchTrend = async () => {
-    try {
-      const res = await api.get(`/analytics/revenue-trend?days=${trendDays}`);
-      setTrendData(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const periodLabel = PERIOD_OPTIONS.find((o) => o.months === period)?.label ?? '';
 
   const topClientsColumns = [
     {
@@ -188,14 +176,14 @@ const Analytics = () => {
 
   const summaryCards = [
     {
-      title: 'Заказов за 30 дней',
+      title: `Заказов за ${periodLabel}`,
       value: dashboard?.total_orders ?? 0,
       icon: <FileTextOutlined />,
       color: '#667eea',
       gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     },
     {
-      title: 'Выручка (завершённые)',
+      title: `Выручка за ${periodLabel}`,
       value: dashboard?.total_revenue ?? 0,
       icon: <DollarOutlined />,
       color: '#38a169',
@@ -220,12 +208,24 @@ const Analytics = () => {
 
   return (
     <div className="analytics-page">
+      {/* Header + global period selector */}
       <div className="analytics-header">
-        <Title level={3} style={{ margin: 0 }}>
-          <RiseOutlined style={{ marginRight: 8, color: '#667eea' }} />
-          Аналитика и статистика
-        </Title>
-        <Text type="secondary">Сводка за последние 30 дней</Text>
+        <div className="analytics-header__left">
+          <Title level={3} style={{ margin: 0 }}>
+            <RiseOutlined style={{ marginRight: 8, color: '#667eea' }} />
+            Аналитика и статистика
+          </Title>
+          <Text type="secondary">Сводка за выбранный период</Text>
+        </div>
+        <div className="analytics-header__right">
+          <CalendarOutlined style={{ color: '#667eea', marginRight: 6, fontSize: 16 }} />
+          <Text style={{ marginRight: 8, fontWeight: 500 }}>Период:</Text>
+          <Select value={period} onChange={setPeriod} style={{ width: 140 }}>
+            {PERIOD_OPTIONS.map((o) => (
+              <Option key={o.months} value={o.months}>{o.label}</Option>
+            ))}
+          </Select>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -239,7 +239,7 @@ const Analytics = () => {
                 </div>
                 <Statistic
                   title={<span className="analytics-stat-card__title">{card.title}</span>}
-                  value={card.isMoney ? card.value : card.value}
+                  value={card.value}
                   formatter={card.isMoney ? (val) => formatMoney(val) : undefined}
                   valueStyle={{ color: card.color, fontWeight: 700, fontSize: 24 }}
                 />
@@ -257,16 +257,8 @@ const Analytics = () => {
             title={
               <div className="analytics-card-title">
                 <CheckCircleOutlined style={{ color: '#667eea', marginRight: 8 }} />
-                Тренд выручки (завершённые заказы)
+                Тренд выручки (завершённые заказы) — {periodLabel}
               </div>
-            }
-            extra={
-              <Select value={trendDays} onChange={setTrendDays} size="small" style={{ width: 120 }}>
-                <Option value={7}>7 дней</Option>
-                <Option value={14}>14 дней</Option>
-                <Option value={30}>30 дней</Option>
-                <Option value={90}>3 месяца</Option>
-              </Select>
             }
           >
             {trendData.length === 0 ? (
@@ -358,16 +350,8 @@ const Analytics = () => {
             title={
               <div className="analytics-card-title">
                 <DollarOutlined style={{ color: '#38a169', marginRight: 8 }} />
-                Статистика по месяцам
+                Статистика по месяцам — {periodLabel}
               </div>
-            }
-            extra={
-              <Select value={monthRange} onChange={setMonthRange} size="small" style={{ width: 140 }}>
-                <Option value={3}>3 месяца</Option>
-                <Option value={6}>6 месяцев</Option>
-                <Option value={12}>12 месяцев</Option>
-                <Option value={24}>24 месяца</Option>
-              </Select>
             }
           >
             {monthlyData.length === 0 ? (
@@ -396,30 +380,9 @@ const Analytics = () => {
                   <YAxis yAxisId="count" orientation="right" tick={{ fontSize: 11 }} />
                   <Tooltip content={<CustomBarTooltip />} />
                   <Legend iconType="circle" iconSize={10} formatter={(v) => <span style={{ fontSize: 12 }}>{v}</span>} />
-                  <Bar
-                    yAxisId="money"
-                    dataKey="revenue"
-                    name="Общая сумма"
-                    fill="url(#barRevenue)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  />
-                  <Bar
-                    yAxisId="money"
-                    dataKey="completed_revenue"
-                    name="Выручка (выдано)"
-                    fill="url(#barCompleted)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  />
-                  <Bar
-                    yAxisId="count"
-                    dataKey="order_count"
-                    name="Кол-во заказов"
-                    fill="#f6ad55"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={24}
-                  />
+                  <Bar yAxisId="money" dataKey="revenue" name="Общая сумма" fill="url(#barRevenue)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar yAxisId="money" dataKey="completed_revenue" name="Выручка (выдано)" fill="url(#barCompleted)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar yAxisId="count" dataKey="order_count" name="Кол-во заказов" fill="#f6ad55" radius={[4, 4, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             )}

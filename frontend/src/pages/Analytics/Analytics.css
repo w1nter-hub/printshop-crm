@@ -5,8 +5,25 @@
 .analytics-header {
   margin-bottom: 24px;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.analytics-header__left {
+  display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+}
+
+.analytics-header__right {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
 
 /* Loading */
